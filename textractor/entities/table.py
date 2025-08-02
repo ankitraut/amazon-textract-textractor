@@ -502,7 +502,6 @@ class Table(DocumentEntity):
         Processes the table into a list of rows for consumption by to_pandas and to_list.
         Returns (table: List[List[str]], columns: Optional[List[str]])
         """
-        import itertools
         rows = sorted([(key, list(group)) for key, group in itertools.groupby(
             self.table_cells, key=lambda cell: cell.row_index
         )], key=lambda r: r[0])
