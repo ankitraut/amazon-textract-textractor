@@ -510,10 +510,12 @@ class Table(DocumentEntity):
         processed_cells = set()
         table = []
         if use_columns:
+            # Try to automatically get the columns if they are in the first row
             columns = [[] for _ in range(self.column_count)]
             is_header_count = 0
             for _, row in rows:
                 if not any([c.is_column_header for c in row]):
+                    # There is not header in that row, we are done
                     break
                 for i, cell in enumerate(row):
                     if (
@@ -522,6 +524,8 @@ class Table(DocumentEntity):
                             config.table_flatten_headers
                     ):
                         if cell.siblings:
+                            # This handles the edge case where we are flattening the headers
+                            # so we want to duplicate the cell text but only in its first row
                             first_row, _, _, _ = cell._get_merged_cell_range()
                             if cell in processed_cells and first_row != cell.row_index:
                                 continue
@@ -548,12 +552,16 @@ class Table(DocumentEntity):
                 use_columns = True
             else:
                 use_columns = False
+                logger.info(
+                    f"The number of column header cell do not match the column count, ignoring them, {len(columns)} vs {self.column_count}"
+                )
                 columns = None
                 row_offset = 0
         if columns and any([c for c in columns]) and config.table_flatten_headers:
             columns = ["".join(c) for c in columns]
             table = [columns]
         elif columns and any([c for c in columns]):
+            # We reset the row offset as only the first line will be taken as header
             columns = [c[0] for c in columns]
             table = [columns]
             row_offset = 1
